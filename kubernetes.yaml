@@ -1,0 +1,54 @@
+#Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spub-sub-server-deployment
+spec:
+  replicas: 1
+  selector:
+    spec:
+      containers:
+      - image: lars1595/pub-sub-server:latest
+        name: pub-sub-server
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pub-sub-kafka-server
+spec:
+  selector:
+    app: pub-sub-kafka-deployment
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spub-sub-server-client
+spec:
+  replicas: 1
+  selector:
+    spec:
+      containers:
+      - image: lars1595/pub-sub-server:latest
+        name: pub-sub-server
+        ports:
+        - containerPort: 80
+---
+
+#Client file
+apiVersion: v1
+kind: Service
+metadata:
+  name: pub-sub-kafka-client
+spec:
+  selector:
+    app: pub-sub-kafka-client
+  ports:
+    - protocol: TCP
+      port: 80 
+      targetPort: 80
