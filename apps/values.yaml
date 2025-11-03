@@ -7,3 +7,4 @@ client:
   image: lars1595/pub-sub-kafka-client:1.0.0
   replicas: 1
   port: 80
+namespace: default
