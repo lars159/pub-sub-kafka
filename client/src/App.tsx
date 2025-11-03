@@ -4,7 +4,7 @@ import Column from './components/Column/Column';
 
  
 function App() {
-  /*
+  
   const socket = new WebSocket('ws://localhost:8000/');
 
 
@@ -18,8 +18,7 @@ function App() {
     console.log('Message from server ', event.data);
   });
   <Column title="Todo" />
-        
-  */
+     
   return (
     <div className="App">
       <div className="grid-container">
