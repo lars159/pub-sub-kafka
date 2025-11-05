@@ -1,5 +1,14 @@
 # Deploy to Azure AKS
 
+This is a test project for deploying a simple To-Do List app to Azure Kubernetes Service (AKS). The goal is to learn and experiment with Kubernetes and Terraform for infrastructure as code and cloud deployment.
+
+![Demo](demo.png)
+
+# Install
+
+use Terraform
+
+or
 ```bash
 # Set environment variables
 MY_RESOURCE_GROUP_NAME=pub-sub-kafka-test
@@ -20,22 +29,31 @@ kubectl get nodes
 
 # Deploy application
 kubectl apply -f kubernetes.yaml
+
+
+
 ```
+
+### To Delete
+az group delete --name $MY_RESOURCE_GROUP_NAME
+
 
 ---
 
-# Set Up Argo CD
+## install uing Helm
+ 
+helm install pub-sub  . -f values.yaml
 
-```bash
-# Create Argo CD namespace
-kubectl create namespace argocd
 
-# Install Argo CD
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+install Grafana loki
 
-# Get Argo CD server external IP
-kubectl get svc argocd-server -n argocd -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
-```
+helm repo add grafana https://grafana.github.io/helm-charts
+
+helm repo update
+
+helm install loki grafana/loki -f values.yaml
+ 
+ 
 
 ---
 

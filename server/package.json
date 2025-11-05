@@ -4,8 +4,14 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "start": "tsc && node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch server.ts",
+    "clean": "rm -rf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t lars1595/pub-sub-kafka-server:latest .",
+    "docker:push": "docker push lars1595/pub-sub-kafka-server:latest",
+    "docker:buildpush": "npm run docker:build && npm run docker:push"
   },
   "author": "",
   "license": "ISC",

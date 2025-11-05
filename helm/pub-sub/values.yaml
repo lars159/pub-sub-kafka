@@ -1,0 +1,12 @@
+namespace: default
+
+server:
+  image: lars1595/pub-sub-kafka-server:latest
+  replicas: 1
+  port: 8000
+
+client:
+  image: lars1595/pub-sub-kafka-client:latest
+  replicas: 1
+  port: 80
+

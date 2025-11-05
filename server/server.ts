@@ -1,59 +1,105 @@
 
-'use strict'; 
-// Simple usage:
 import WebSocketExpress, { Router } from 'websocket-express';
-import {readMsgAll, writeMsg,readMsg } from './kafka';
+import { readMsgAll, writeMsg } from './kafka';
+
 const app = new WebSocketExpress();
 const router = new Router();
 
- 
 const PORT = 8000;
- 
-const HOST = 'localhost';
+const HOST = '0.0.0.0';
 
-app.use(function (req, res, next) {
-    console.log('middleware'); 
-    return next();
+// Sample tasks data (replace with your Kafka integration)
+const tasks = [
+  {
+    id: '1',
+    title: 'First Task',
+    description: 'This is the first task',
+    status: 'todo',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Second Task',
+    description: 'This is a task in progress',
+    status: 'in-work',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+// Store all active WebSocket connections
+const clients = new Set();
+
+// Broadcast message to all connected clients
+const broadcast = (message: string) => {
+  clients.forEach((client: any) => {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(message);
+    }
   });
+};
 
-router.ws('/', async (req, res) => {
-    
+// Middleware for logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  return next();
+});
+
+// WebSocket route for real-time updates
+router.ws('/ws', async (req, res) => {
+  try {
     const ws = await res.accept();
-    console.log("redy")
+    console.log('WebSocket connection established');
      
-    readMsgAll((msg) => {
-        ws.send(msg);
-    });
-}); 
-
-
-app.get('/', (req, res) => {
-    console.log("redy")
-     
-    
+    clients.add(ws);
  
-}); 
+    ws.send(JSON.stringify(tasks));
+ 
+    ws.on('message', async (message) => {
+      try {
+        const newTask = JSON.parse(message.toString()); // Convert Buffer to string
+        console.log('Received new task:', newTask);
+         
+        tasks.push(newTask);
+         
+        await writeMsg(newTask.id, newTask.title, newTask.description);
+         
+        broadcast(JSON.stringify(tasks));
+      } catch (error) {
+        console.error('Error processing incoming message:', error);
+      }
+    });
 
-app.post('/board', (req, res) => {
-    
+    // Set up Kafka consumer
+    readMsgAll((msg) => {
+      try {
+        const parsedMsg = JSON.parse(msg);
+        
+        if (!tasks.find(t => t.id === parsedMsg.id)) {
+          tasks.push(parsedMsg);
+          broadcast(JSON.stringify(tasks));
+        }
+      } catch (error) {
+        console.error('Error processing Kafka message:', error);
+      }
+    });
+ 
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+      clients.delete(ws); // Remove from clients set
+    });
+
+  } catch (error) {
+    console.error('WebSocket error:', error);
+  }
 });
 
-app.post('/story', async (req, res) => {
-    console.log("story");
-    await writeMsg("id" , "title" , "story") ;
-     res.send( )
-});
-
-app.post('/comment', (req, res) => {
-   
-});
-
-app.get('/boards', (req, res) => {
-    res.send()
-});
-
+ 
+// Add router middleware
 app.use(router);
-   
-  
-app.listen(PORT, HOST);
-console.log(`Running on http://${HOST}:${PORT}`);
+
+// Start server
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
+});

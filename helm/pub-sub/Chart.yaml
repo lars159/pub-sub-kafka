@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pub-sub
+description: A Helm chart for pub-sub-kafka
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

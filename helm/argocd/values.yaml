@@ -1,0 +1,28 @@
+# Basic values.yaml for Argo CD Helm chart on Minikube
+# Reference: https://argoproj.github.io/argo-helm
+
+# Set the Argo CD server service type to NodePort for Minikube access
+server:
+  service:
+    type: NodePort
+    nodePort: 30080
+  ingress:
+    enabled: false
+
+# Disable high-availability for simplicity
+controller:
+  replicas: 1
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1
+
+# Use default Minikube storage class
+redis:
+  persistence:
+    enabled: false
+
+
+# Disable notifications for basic setup
+notifications:
+  enabled: false

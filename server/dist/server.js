@@ -1,7 +1,11 @@
-'use strict';
+"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -28,12 +42,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -55,55 +69,176 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Simple usage:
 var websocket_express_1 = __importStar(require("websocket-express"));
 var kafka_1 = require("./kafka");
 var app = new websocket_express_1.default();
 var router = new websocket_express_1.Router();
 var PORT = 8000;
 var HOST = 'localhost';
-app.use(function (req, res, next) {
-    console.log('middleware');
-    return next();
-});
-router.ws('/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var ws;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, res.accept()];
-            case 1:
-                ws = _a.sent();
-                console.log("redy");
-                kafka_1.readMsgAll(function (msg) {
-                    ws.send(msg);
-                });
-                return [2 /*return*/];
+// Sample tasks data (replace with your Kafka integration)
+var tasks = [
+    {
+        id: '1',
+        title: 'First Task',
+        description: 'This is the first task',
+        status: 'todo',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: '2',
+        title: 'Second Task',
+        description: 'This is a task in progress',
+        status: 'in-work',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }
+];
+// Store all active WebSocket connections
+var clients = new Set();
+// Broadcast message to all connected clients
+var broadcast = function (message) {
+    clients.forEach(function (client) {
+        if (client.readyState === 1) { // WebSocket.OPEN
+            client.send(message);
         }
     });
-}); });
-app.get('/', function (req, res) {
-    console.log("redy");
+};
+// Middleware for logging
+app.use(function (req, res, next) {
+    console.log("".concat(new Date().toISOString(), " - ").concat(req.method, " ").concat(req.url));
+    return next();
 });
-app.post('/board', function (req, res) {
-});
-app.post('/story', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+// WebSocket route for real-time updates
+router.ws('/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var ws_1, error_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                console.log("story");
-                return [4 /*yield*/, kafka_1.writeMsg("id", "title", "story")];
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, res.accept()];
             case 1:
-                _a.sent();
-                res.send();
-                return [2 /*return*/];
+                ws_1 = _a.sent();
+                console.log('WebSocket connection established');
+                // Add to clients set
+                clients.add(ws_1);
+                // Send initial tasks
+                ws_1.send(JSON.stringify(tasks));
+                // Handle incoming messages from client
+                ws_1.on('message', function (message) { return __awaiter(void 0, void 0, void 0, function () {
+                    var newTask, error_2;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                newTask = JSON.parse(message.toString());
+                                console.log('Received new task:', newTask);
+                                // Add task to our list
+                                tasks.push(newTask);
+                                // Save to Kafka
+                                return [4 /*yield*/, (0, kafka_1.writeMsg)(newTask.id, newTask.title, newTask.description)];
+                            case 1:
+                                // Save to Kafka
+                                _a.sent();
+                                // Broadcast updated tasks to all connected clients
+                                broadcast(JSON.stringify(tasks));
+                                return [3 /*break*/, 3];
+                            case 2:
+                                error_2 = _a.sent();
+                                console.error('Error processing incoming message:', error_2);
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                // Set up Kafka consumer
+                (0, kafka_1.readMsgAll)(function (msg) {
+                    try {
+                        var parsedMsg_1 = JSON.parse(msg);
+                        // Only add if not already in tasks
+                        if (!tasks.find(function (t) { return t.id === parsedMsg_1.id; })) {
+                            tasks.push(parsedMsg_1);
+                            broadcast(JSON.stringify(tasks));
+                        }
+                    }
+                    catch (error) {
+                        console.error('Error processing Kafka message:', error);
+                    }
+                });
+                // Handle WebSocket close
+                ws_1.on('close', function () {
+                    console.log('WebSocket connection closed');
+                    clients.delete(ws_1); // Remove from clients set
+                });
+                return [3 /*break*/, 3];
+            case 2:
+                error_1 = _a.sent();
+                console.error('WebSocket error:', error_1);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
         }
     });
 }); });
-app.post('/comment', function (req, res) {
+// REST API routes
+app.get('/', function (req, res) {
+    res.json({ status: 'Server is running' });
 });
-app.get('/boards', function (req, res) {
-    res.send();
+// Create a new task
+app.post('/task', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, title, description, newTask, error_3;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                _a = req.body, title = _a.title, description = _a.description;
+                newTask = {
+                    id: Date.now().toString(),
+                    title: title,
+                    description: description,
+                    status: 'todo',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                return [4 /*yield*/, (0, kafka_1.writeMsg)(newTask.id, newTask.title, newTask.description)];
+            case 1:
+                _b.sent();
+                tasks.push(newTask);
+                res.json(newTask);
+                return [3 /*break*/, 3];
+            case 2:
+                error_3 = _b.sent();
+                console.error('Error creating task:', error_3);
+                res.status(500).json({ error: 'Failed to create task' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+// Update task status
+app.put('/task/:id/status', function (req, res) {
+    try {
+        var id_1 = req.params.id;
+        var status_1 = req.body.status;
+        var task = tasks.find(function (t) { return t.id === id_1; });
+        if (!task) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+        task.status = status_1;
+        task.updatedAt = new Date().toISOString();
+        res.json(task);
+    }
+    catch (error) {
+        console.error('Error updating task:', error);
+        res.status(500).json({ error: 'Failed to update task' });
+    }
 });
+// Get all tasks
+app.get('/tasks', function (req, res) {
+    res.json(tasks);
+});
+// Add router middleware
 app.use(router);
-app.listen(PORT, HOST);
-console.log("Running on http://" + HOST + ":" + PORT);
+// Start server
+app.listen(PORT, HOST, function () {
+    console.log("Server running on http://".concat(HOST, ":").concat(PORT));
+});
